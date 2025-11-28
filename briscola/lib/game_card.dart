@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 class GameCard extends StatefulWidget{
   final String backPath = "images/back.png";
-  final String frontPath;
 
-  const GameCard({super.key, required this.frontPath});
+  const GameCard({super.key});
 
   @override
   State<StatefulWidget> createState() => GameCardState();
@@ -12,16 +11,25 @@ class GameCard extends StatefulWidget{
 
 
 class GameCardState extends State<GameCard>{
+  String? frontPath;
+
+  void setFrontPath(String path){
+    frontPath = path;
+  }
+
+  void setVisible(){
+
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {},
       child: Image.asset(
-        "images/background.png",
+        "images/cards/retro.jpg",
         fit: BoxFit.cover,
-        width: 200,
-        height: 200,
+        width: 100,
+        height: 300,
       ),
     );
   }

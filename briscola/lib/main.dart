@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 
@@ -35,6 +37,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _serverMessage = "Nessuna connessione";
 
+  List<Widget> widgets = [];
+
   @override
   void initState() {
     super.initState();
@@ -44,10 +48,13 @@ class _MyHomePageState extends State<MyHomePage> {
   void _connectToServer() async {
     try {
       // Cambia localhost con l'IP del tuo PC se usi un emulatore Android
-      final socket = await WebSocket.connect('ws://10.0.2.2:8080/ws');
+      final WebSocket socket = await WebSocket.connect('ws://10.0.2.2:8080/ws');
       socket.listen((data) {
         setState(() {
           _serverMessage = data.toString();
+          if(_serverMessage != "Connesso"){
+            _parseMessage(_serverMessage);
+          }
         });
       });
     } catch (e) {
@@ -57,15 +64,41 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _listen(WebSocket socket){
+
+  }
+
+  void _parseMessage(String serverMessage){
+    String message = jsonDecode(serverMessage)['message'];
+    switch (message) {
+      case "init":
+        initGame();
+        break;
+    }
+
+  }
+
+  void initGame(){
+    setState(() {
+      for(int i = 0; i < 40; i++){
+        double y = 2;
+        widgets.add(
+          Positioned(
+            left: 0,
+            top: y,
+            child: GameCard(),
+          )
+        );
+        y += 2;
+      }
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      /*appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),*/
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -79,15 +112,11 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(_serverMessage)
-          ],
+            Text(_serverMessage),
+            ...widgets
+          ]
         ),
       ),
-      /*floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),*/
     );
   }
 }
