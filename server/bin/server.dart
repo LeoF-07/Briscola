@@ -5,7 +5,7 @@ import 'dart:math';
 import 'card.dart';
 
 
-const List<String> semi = ["denari", "coppe", "spade", "bastoni"];
+const List<String> semi = ["Denari", "Coppe", "Spade", "Bastoni"];
 enum Player {player1, player2}
 
 
@@ -28,7 +28,7 @@ Future<void> main() async {
 
   void initCards(){
     for(String seme in semi){
-      for(int i = 0; i < 10; i++) {
+      for(int i = 1; i <= 10; i++) {
         cards.add(Card(seme: seme, valore: i));
       }
     }
@@ -72,19 +72,54 @@ Future<void> main() async {
     socket2!.add(jsonInitializedGameDataPlayer2);
   }
 
+  void discoverBriscola(){
+    briscola = cards.removeLast();
+
+    print(briscola!.seme);
+    print(briscola!.valore);
+
+    String jsonBriscola = jsonEncode(
+      {
+        'message': 'briscola',
+        'seme': briscola!.seme,
+        'valore': briscola!.valore
+      }
+    );
+
+    socket1!.add(jsonBriscola);
+    socket2!.add(jsonBriscola);
+  }
+
   void startGame(){
     initCards();
     shuffleCards();
-    /*
-    briscola = cards.removeLast();
-    player1Cards = draw3Cards();
-    player2Cards = draw3Cards();
-    sendInitializedGame();
-    */
 
     String jsonInit = jsonEncode({'message': 'init'});
     socket1!.add(jsonInit);
     socket2!.add(jsonInit);
+
+    int initPlayer = 0;
+
+    socket1.listen((data) {
+      print(data);
+      if(data == "initialized"){
+        initPlayer++;
+        if(initPlayer == 2){
+          discoverBriscola();
+          initPlayer++; // Così non li rileva due volte
+        }
+      }
+    });
+    socket2.listen((data) {
+      print(data);
+      if(data == "initialized"){
+        initPlayer++;
+        if(initPlayer == 2){
+          discoverBriscola();
+          initPlayer++;
+        }
+      }
+    });
   }
 
 

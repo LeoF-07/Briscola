@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:convert';
 
 import 'game_card.dart';
 
@@ -35,28 +34,36 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  WebSocket? socket;
+
+  late List indicatori = [
+    Center(child: ElevatedButton(onPressed: _connectToServer, child: Text("Connettiti")))
+  ];
+
   String _serverMessage = "Nessuna connessione";
 
-  List<Widget> widgets = [];
+  List<GlobalKey<GameCardState>> keysCard = [];
+  List<ValueNotifier<Offset>> positions = []; // notifiers per ogni carta
+  List<bool> tapEnabled = [];
+
+  int lastDrawCard = 1;
 
   @override
   void initState() {
     super.initState();
-    _connectToServer();
+    //_connectToServer();
   }
 
   void _connectToServer() async {
+    indicatori.removeLast();
+    indicatori.add(Center(child: Text("Collegamento...")));
+    
     try {
       // Cambia localhost con l'IP del tuo PC se usi un emulatore Android
-      final WebSocket socket = await WebSocket.connect('ws://10.0.2.2:8080/ws');
-      socket.listen((data) {
-        setState(() {
-          _serverMessage = data.toString();
-          if(_serverMessage != "Connesso"){
-            _parseMessage(_serverMessage);
-          }
-        });
-      });
+      socket = await WebSocket.connect('ws://10.0.2.2:8080/ws');
+      indicatori.removeLast();
+      indicatori.add(Center(child: Text("In attesa dell'avversario...")));
+      _listen();
     } catch (e) {
       setState(() {
         _serverMessage = "Errore di connessione: $e";
@@ -64,57 +71,107 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _listen(WebSocket socket){
-
+  void _listen(){
+    socket!.listen((data) {
+      setState(() {
+        _serverMessage = data.toString();
+        if(_serverMessage != "Connesso"){
+          _parseMessage(_serverMessage);
+        }
+      });
+    });
   }
 
   void _parseMessage(String serverMessage){
-    String message = jsonDecode(serverMessage)['message'];
+    final decodedServerMessage = jsonDecode(serverMessage);
+    String message = decodedServerMessage['message'];
+
     switch (message) {
       case "init":
         initGame();
+        break;
+      case "briscola":
+        //WidgetsBinding.instance.addPostFrameCallback((_) {
+          discoverBriscola(decodedServerMessage['seme'], decodedServerMessage['valore']);
+        //});
         break;
     }
 
   }
 
   void initGame(){
-    setState(() {
-      for(int i = 0; i < 40; i++){
-        double y = 2;
-        widgets.add(
-          Positioned(
-            left: 0,
-            top: y,
-            child: GameCard(),
-          )
-        );
-        y += 2;
-      }
+    indicatori.removeLast();
+
+    double x = 0;
+    double y = 470;
+    for (int i = 0; i < 40; i++) {
+      keysCard.add(GlobalKey<GameCardState>());
+      positions.add(ValueNotifier(Offset(x, y)));
+      tapEnabled.add(false);
+      y += 1;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      socket!.add("initialized");
     });
   }
 
+  void discoverBriscola(String seme, int valore) {
+    keysCard[keysCard.length - 1].currentState!.setFrontPath(seme, valore);
+    keysCard[keysCard.length - 1].currentState!.setVisible();
+    moveCard(keysCard.length - lastDrawCard, Offset(0, 220));
+    lastDrawCard++;
+
+    socket!.add("briscola discovered");
+  }
+
+  void moveCard(int index, Offset newPos) {
+    positions[index].value = newPos;
+  }
+
+  void giocaCarta(int i){
+    moveCard(i, const Offset(100, 100));
+  }
+
+
+  double x = 0;
+  double y = 470;
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("images/background.png"), // percorso immagine
-            fit: BoxFit.cover, // Adatta l'immagine a tutto lo schermo
+            image: AssetImage("images/background.png"),
+            fit: BoxFit.cover,
           ),
         ),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(_serverMessage),
-            ...widgets
-          ]
+        child: Stack(
+          //children: widgets
+          children: [
+            for (int i = 0; i < keysCard.length; i++)
+              ValueListenableBuilder<Offset>(
+                valueListenable: positions[i],
+                builder: (context, pos, child) {
+                  return AnimatedPositioned(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                    left: pos.dx,
+                    top: pos.dy,
+                    child: GestureDetector(
+                      onTap: tapEnabled[i] ? () {
+                        giocaCarta(i);
+                        //disableTap(i); // disabilita dopo il primo tap
+                      } : null,
+                      child: GameCard(key: keysCard[i]),
+                    ),
+                  );
+                },
+              ),
+            ...indicatori
+          ],
         ),
       ),
     );

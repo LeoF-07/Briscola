@@ -61,6 +61,47 @@ flutter:
   assets:
     - images/background.png
     - images/cards/retro.jpg
+    - images/cards/Bastoni/1.jpg
+    - images/cards/Bastoni/2.jpg
+    - images/cards/Bastoni/3.jpg
+    - images/cards/Bastoni/4.jpg
+    - images/cards/Bastoni/5.jpg
+    - images/cards/Bastoni/6.jpg
+    - images/cards/Bastoni/7.jpg
+    - images/cards/Bastoni/8.jpg
+    - images/cards/Bastoni/9.jpg
+    - images/cards/Bastoni/10.jpg
+    - images/cards/Spade/1.jpg
+    - images/cards/Spade/2.jpg
+    - images/cards/Spade/3.jpg
+    - images/cards/Spade/4.jpg
+    - images/cards/Spade/5.jpg
+    - images/cards/Spade/6.jpg
+    - images/cards/Spade/7.jpg
+    - images/cards/Spade/8.jpg
+    - images/cards/Spade/9.jpg
+    - images/cards/Spade/10.jpg
+    - images/cards/Coppe/1.jpg
+    - images/cards/Coppe/2.jpg
+    - images/cards/Coppe/3.jpg
+    - images/cards/Coppe/4.jpg
+    - images/cards/Coppe/5.jpg
+    - images/cards/Coppe/6.jpg
+    - images/cards/Coppe/7.jpg
+    - images/cards/Coppe/8.jpg
+    - images/cards/Coppe/9.jpg
+    - images/cards/Coppe/10.jpg
+    - images/cards/Denari/1.jpg
+    - images/cards/Denari/2.jpg
+    - images/cards/Denari/3.jpg
+    - images/cards/Denari/4.jpg
+    - images/cards/Denari/5.jpg
+    - images/cards/Denari/6.jpg
+    - images/cards/Denari/7.jpg
+    - images/cards/Denari/8.jpg
+    - images/cards/Denari/9.jpg
+    - images/cards/Denari/10.jpg
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
