@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _serverMessage = "Nessuna connessione";
 
   List<GlobalKey<GameCardState>> keysCard = [];
-  List<ValueNotifier<Offset>> positions = []; // notifiers per ogni carta
+  List<Offset> coordinate = []; // notifiers per ogni carta
   List<bool> tapEnabled = [];
 
   int lastDrawCard = 1;
@@ -51,7 +51,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    //_connectToServer();
   }
 
   void _connectToServer() async {
@@ -91,10 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
         initGame();
         break;
       case "briscola":
-        //WidgetsBinding.instance.addPostFrameCallback((_) {
-          discoverBriscola(decodedServerMessage['seme'], decodedServerMessage['valore']);
-        //});
+        discoverBriscola(decodedServerMessage['seme'], decodedServerMessage['valore']);
         break;
+      case "drawCards":
+        drawCards(decodedServerMessage['cards']);
     }
 
   }
@@ -106,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
     double y = 470;
     for (int i = 0; i < 40; i++) {
       keysCard.add(GlobalKey<GameCardState>());
-      positions.add(ValueNotifier(Offset(x, y)));
+      coordinate.add(Offset(x, y));
       tapEnabled.add(false);
       y += 1;
     }
@@ -124,8 +123,49 @@ class _MyHomePageState extends State<MyHomePage> {
     socket!.add("briscola discovered");
   }
 
+  Future<void> drawMyCards(List cards) async {
+    double x = 240;
+
+    await for (var i in Stream.periodic(Duration(seconds: 1), (count) => count).take(3))
+    {
+      moveCard(keysCard.length - lastDrawCard, Offset(x, 800));
+      setState(() {
+        tapEnabled[keysCard.length - lastDrawCard] = true;
+      });
+
+      await Future.delayed(Duration(milliseconds: 100), () {
+        int cardIndex = lastDrawCard;
+        setState(() {
+          keysCard[keysCard.length - cardIndex].currentState!.setFrontPath(cards[i]['seme'], cards[i]['valore']);
+          keysCard[keysCard.length - cardIndex].currentState!.setVisible();
+        });
+      });
+      lastDrawCard++;
+      x -= 80;
+    }
+  }
+
+  void drawOpponentCards(){
+    double x = 80;
+    Stream.periodic(Duration(seconds: 1), (count) {
+      return count;
+    }).take(3).listen((data)
+    {
+      moveCard(keysCard.length - lastDrawCard, Offset(x, -50));
+      lastDrawCard++;
+      x += 80;
+    });
+  }
+
+  void drawCards(List cards) async {
+    await drawMyCards(cards);
+    drawOpponentCards();
+  }
+
   void moveCard(int index, Offset newPos) {
-    positions[index].value = newPos;
+    setState(() {
+      coordinate[index] = newPos;
+    });
   }
 
   void giocaCarta(int i){
@@ -152,23 +192,18 @@ class _MyHomePageState extends State<MyHomePage> {
           //children: widgets
           children: [
             for (int i = 0; i < keysCard.length; i++)
-              ValueListenableBuilder<Offset>(
-                valueListenable: positions[i],
-                builder: (context, pos, child) {
-                  return AnimatedPositioned(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeInOut,
-                    left: pos.dx,
-                    top: pos.dy,
-                    child: GestureDetector(
-                      onTap: tapEnabled[i] ? () {
-                        giocaCarta(i);
-                        //disableTap(i); // disabilita dopo il primo tap
-                      } : null,
-                      child: GameCard(key: keysCard[i]),
-                    ),
-                  );
-                },
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+                left: coordinate[i].dx,
+                top: coordinate[i].dy,
+                child: GestureDetector(
+                  onTap: tapEnabled[i] ? () {
+                    giocaCarta(i);
+                    //disableTap(i); // disabilita dopo il primo tap
+                  } : null,
+                  child: GameCard(key: keysCard[i]),
+                ),
               ),
             ...indicatori
           ],

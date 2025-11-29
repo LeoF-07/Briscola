@@ -22,8 +22,8 @@ Future<void> main() async {
 
 
   List<Card> cards = [];
-  List<Card> player1Cards = [];
-  List<Card> player2Cards = [];
+  List<Card> socket1Mazzo = [];
+  List<Card> socket2Mazzo = [];
   Card? briscola;
 
   void initCards(){
@@ -38,38 +38,21 @@ Future<void> main() async {
     cards.shuffle(Random());
   }
 
-  List<Card> draw3Cards(){
+
+  void drawCards(WebSocket socket){
     List<Card> drawedCards = [];
     for(int i = 0; i < 3; i++){
       drawedCards.add(cards.removeLast());
     }
-    return drawedCards;
-  }
 
-  void sendInitializedGame(){
-    String jsonMazzo = jsonEncode(cards.map((card) => card.toJson()).toList());
-    String jsonBriscola = jsonEncode(briscola!.toJson());
-    String jsonPlayer1Cards = jsonEncode(player1Cards.map((card) => card.toJson()).toList());
-    String jsonPlayer2Cards = jsonEncode(player2Cards.map((card) => card.toJson()).toList());
-
-    String jsonInitializedGameDataPlayer1 = jsonEncode(
+    String jsonCards = jsonEncode(
       {
-        'mazzo': jsonMazzo,
-        'briscola': jsonBriscola,
-        'playerCards': jsonPlayer1Cards
+        'message': 'drawCards',
+        'cards': drawedCards.map((c) => {'seme': c.seme, 'valore': c.valore}).toList()
       }
     );
 
-    String jsonInitializedGameDataPlayer2 = jsonEncode(
-      {
-        'mazzo': jsonMazzo,
-        'briscola': jsonBriscola,
-        'playerCards': jsonPlayer2Cards
-      }
-    );
-
-    socket1!.add(jsonInitializedGameDataPlayer1);
-    socket2!.add(jsonInitializedGameDataPlayer2);
+    socket.add(jsonCards);
   }
 
   void discoverBriscola(){
@@ -90,6 +73,25 @@ Future<void> main() async {
     socket2!.add(jsonBriscola);
   }
 
+
+  int readyPlayers = 0;
+
+  void listen(WebSocket socket){
+    socket.listen((data) {
+      print(data);
+      readyPlayers++;
+      if(data == "initialized" && readyPlayers == 2){
+        discoverBriscola();
+        readyPlayers = 0;
+      }
+      else if(data == "briscola discovered" && readyPlayers == 2){
+          drawCards(socket1!);
+          drawCards(socket2!);
+          readyPlayers = 0;
+      }
+    });
+  }
+
   void startGame(){
     initCards();
     shuffleCards();
@@ -98,28 +100,8 @@ Future<void> main() async {
     socket1!.add(jsonInit);
     socket2!.add(jsonInit);
 
-    int initPlayer = 0;
-
-    socket1.listen((data) {
-      print(data);
-      if(data == "initialized"){
-        initPlayer++;
-        if(initPlayer == 2){
-          discoverBriscola();
-          initPlayer++; // Così non li rileva due volte
-        }
-      }
-    });
-    socket2.listen((data) {
-      print(data);
-      if(data == "initialized"){
-        initPlayer++;
-        if(initPlayer == 2){
-          discoverBriscola();
-          initPlayer++;
-        }
-      }
-    });
+    listen(socket1);
+    listen(socket2);
   }
 
 
@@ -129,25 +111,12 @@ Future<void> main() async {
     if (req.uri.path == '/ws' && connectedPlayers == 0) {
       socket1 = await WebSocketTransformer.upgrade(req);
       print('Nuovo client collegato');
-
-      // Invia messaggio di benvenuto
       socket1.add('Connesso');
-      // Lo cambio, devo trovare un modo per diversificare i tipi di messaggi inviati al client
-      // Tipo qui potrei mandare un json {type: "message", content: "Connesso"} (o content, o data, o come voglio chiamarlo io)
-      // E invece quando invio i dati di gioco {type: "gameData", content: "..."}
-
       connectedPlayers++;
-
-      // Ascolta eventuali messaggi dal client
-      /*socket1.listen((msg) {
-        print('Messaggio dal client: $msg');
-      });*/
     } 
     else if(req.uri.path == '/ws' && connectedPlayers == 1) {
       socket2 = await WebSocketTransformer.upgrade(req);
       print('Nuovo client collegato');
-
-      // Invia messaggio di benvenuto
       socket2.add('Connesso');
 
       startGame();
