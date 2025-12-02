@@ -13,7 +13,12 @@ class GameCardState extends State<GameCard>{
   String retroPath = "images/cards/retro.jpg";
   String? frontPath;
 
+  String? seme;
+  int? valore;
+
   void setFrontPath(String seme, int valore){
+    this.seme = seme;
+    this.valore = valore;
     frontPath = "images/cards/$seme/$valore.jpg";
   }
 

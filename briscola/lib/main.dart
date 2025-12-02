@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -46,7 +48,9 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Offset> coordinate = []; // notifiers per ogni carta
   List<bool> tapEnabled = [];
 
-  int lastDrawCard = 1;
+  int lastDrawCard = 39;
+  List<int> drawedCards = [];
+  List<int> opponentCards = [];
 
   @override
   void initState() {
@@ -94,6 +98,15 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       case "drawCards":
         drawCards(decodedServerMessage['cards']);
+        break;
+      case "your turn":
+        play();
+        break;
+      case "opponent played":
+        int index = Random().nextInt(3);
+        moveCard(opponentCards[index], Offset(100, 100));
+        opponentCards.removeAt(index);
+        break;
     }
 
   }
@@ -115,10 +128,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void discoverBriscola(String seme, int valore) {
-    keysCard[keysCard.length - 1].currentState!.setFrontPath(seme, valore);
-    keysCard[keysCard.length - 1].currentState!.setVisible();
-    moveCard(keysCard.length - lastDrawCard, Offset(0, 220));
-    lastDrawCard++;
+    keysCard[lastDrawCard].currentState!.setFrontPath(seme, valore);
+    keysCard[lastDrawCard].currentState!.setVisible();
+    moveCard(lastDrawCard, Offset(0, 220));
+    lastDrawCard--;
 
     socket!.add("briscola discovered");
   }
@@ -126,40 +139,59 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> drawMyCards(List cards) async {
     double x = 240;
 
+    drawedCards.clear();
     await for (var i in Stream.periodic(Duration(seconds: 1), (count) => count).take(3))
     {
-      moveCard(keysCard.length - lastDrawCard, Offset(x, 800));
-      setState(() {
-        tapEnabled[keysCard.length - lastDrawCard] = true;
-      });
+      moveCard(lastDrawCard, Offset(x, 800));
 
-      await Future.delayed(Duration(milliseconds: 100), () {
-        int cardIndex = lastDrawCard;
+      int drawedCard = lastDrawCard;
+      drawedCards.add(drawedCard);
+
+      Future.delayed(Duration(milliseconds: 200), () {
         setState(() {
-          keysCard[keysCard.length - cardIndex].currentState!.setFrontPath(cards[i]['seme'], cards[i]['valore']);
-          keysCard[keysCard.length - cardIndex].currentState!.setVisible();
+          keysCard[drawedCard].currentState!.setFrontPath(cards[i]['seme'], cards[i]['valore']);
+          keysCard[drawedCard].currentState!.setVisible();
         });
       });
-      lastDrawCard++;
+      lastDrawCard--;
       x -= 80;
     }
   }
 
-  void drawOpponentCards(){
+  Future<void> drawOpponentCards() async {
+    opponentCards.clear();
     double x = 80;
     Stream.periodic(Duration(seconds: 1), (count) {
       return count;
     }).take(3).listen((data)
     {
-      moveCard(keysCard.length - lastDrawCard, Offset(x, -50));
-      lastDrawCard++;
+      opponentCards.add(lastDrawCard);
+      moveCard(lastDrawCard, Offset(x, -50));
+      lastDrawCard--;
       x += 80;
     });
   }
 
   void drawCards(List cards) async {
     await drawMyCards(cards);
-    drawOpponentCards();
+    await drawOpponentCards();
+    socket!.add("cards drawed");
+  }
+
+  void makeCardsTappable(bool tappable){
+    for(int drawedCard in drawedCards){
+      setState(() {
+        if(tappable) {
+          tapEnabled[drawedCard] = true;
+        } else {
+          tapEnabled[drawedCard] = false;
+        }
+      });
+    }
+  }
+
+  void play(){
+    makeCardsTappable(true);
   }
 
   void moveCard(int index, Offset newPos) {
@@ -170,6 +202,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void giocaCarta(int i){
     moveCard(i, const Offset(100, 100));
+    makeCardsTappable(false);
+    drawedCards.removeAt(i % 3); // 38 = 2, 37 = 1, 36 = 0 e così via
+    String playedCardJson = jsonEncode(
+        {
+          'message': 'card played',
+          'seme': keysCard[i].currentState!.seme,
+          'valore':  keysCard[i].currentState!.valore
+        }
+    );
+    socket!.add(playedCardJson);
   }
 
 

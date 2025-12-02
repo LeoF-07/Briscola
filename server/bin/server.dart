@@ -26,6 +26,12 @@ Future<void> main() async {
   List<Card> socket2Mazzo = [];
   Card? briscola;
 
+  List cardsToConfront = ["", ""];
+
+  int turno = 0;
+  bool canPlay = false;
+  List<WebSocket> sockets = [];
+
   void initCards(){
     for(String seme in semi){
       for(int i = 1; i <= 10; i++) {
@@ -73,10 +79,42 @@ Future<void> main() async {
     socket2!.add(jsonBriscola);
   }
 
+  void chooseTheFirst(){
+    if(Random().nextBool()){
+      sockets.add(socket1!);
+      sockets.add(socket2!);
+    } else{
+      sockets.add(socket2!);
+      sockets.add(socket1!);
+    }
+  }
+
+  void play(){
+    for(int i = 0; i < 6; i++){
+      sockets[turno].add(jsonEncode({"message": "your turn"}));
+      if(turno == 0 && canPlay){
+        canPlay = false;
+        turno = 1;
+      }
+      else if(turno == 1 && canPlay){
+        canPlay = false;
+        turno = 0;
+      }
+    }
+  }
+
+  void setPlayedCard(int player, String seme, int valore){
+    cardsToConfront[player] = Card(seme: seme, valore: valore);
+  }
+
+  void sendToTheOpponent(int player){
+    sockets[player % 2].add(jsonEncode({"message": "opponent played"}));
+  }
+
 
   int readyPlayers = 0;
 
-  void listen(WebSocket socket){
+  void listen(WebSocket socket, int player){
     socket.listen((data) {
       print(data);
       readyPlayers++;
@@ -89,6 +127,19 @@ Future<void> main() async {
           drawCards(socket2!);
           readyPlayers = 0;
       }
+      else if(data == "cards drawed" && readyPlayers == 2){
+        chooseTheFirst();
+        canPlay = true;
+        play();
+        readyPlayers = 0;
+      }
+      else if(data.toString().startsWith("{")){
+        final decodedData = jsonDecode(data);
+        if(decodedData['message'] == "card played"){
+          setPlayedCard(player, decodedData['seme'], decodedData['valore']);
+          sendToTheOpponent(player);
+        }
+      }
     });
   }
 
@@ -100,8 +151,8 @@ Future<void> main() async {
     socket1!.add(jsonInit);
     socket2!.add(jsonInit);
 
-    listen(socket1);
-    listen(socket2);
+    listen(socket1, 0);
+    listen(socket2, 1);
   }
 
 
