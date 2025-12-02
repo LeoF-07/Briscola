@@ -20,13 +20,26 @@ Future<void> main() async {
   int connectedPlayers = 0;
 
 
+  Map<int, int> cardPoints = {
+      1: 11,
+      2: 0,
+      3: 10,
+      4: 0,
+      5: 0,
+      6: 0,
+      7: 0,
+      8: 2,
+      9: 3,
+      10: 4
+  };
+
+  List<int> playerPoints = [0, 0];
 
   List<Card> cards = [];
-  List<Card> socket1Mazzo = [];
-  List<Card> socket2Mazzo = [];
+  List<List<Card>> mazzi = [[],[]];
   Card? briscola;
 
-  List cardsToConfront = ["", ""];
+  List<dynamic> cardsToConfront = ["", ""];
 
   int turno = 0;
   bool canPlay = false;
@@ -80,13 +93,7 @@ Future<void> main() async {
   }
 
   void chooseTheFirst(){
-    if(Random().nextBool()){
-      sockets.add(socket1!);
-      sockets.add(socket2!);
-    } else{
-      sockets.add(socket2!);
-      sockets.add(socket1!);
-    }
+    turno = Random().nextInt(2);
   }
 
   void play(){
@@ -107,8 +114,33 @@ Future<void> main() async {
     cardsToConfront[player] = Card(seme: seme, valore: valore);
   }
 
-  void sendToTheOpponent(int player){
-    sockets[player % 2].add(jsonEncode({"message": "opponent played"}));
+  void sendToTheOpponent(int player, String seme, int valore){
+    sockets[(player + 1) % 2].add(jsonEncode({"message": "opponent played", "seme": seme, "valore": valore}));
+  }
+
+  int makeConfront(){
+    Card firstCard = cardsToConfront[0];
+    Card secondCard = cardsToConfront[1];
+    if(firstCard.seme == briscola!.seme && secondCard.seme != briscola!.seme){
+      playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+      return 0;
+    }
+    else if(secondCard.seme == briscola!.seme && firstCard.seme != briscola!.seme){
+      playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+      return 1;
+    }
+    else if((firstCard.seme == briscola!.seme && secondCard.seme == briscola!.seme) || (firstCard.seme != briscola!.seme && secondCard.seme != briscola!.seme)){
+      if(cardPoints[firstCard.valore]! > cardPoints[secondCard.valore]!){
+        playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+        return 0;
+      }
+      else{
+        playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+        return 1;
+      }
+    }
+
+    return 0;
   }
 
 
@@ -137,8 +169,36 @@ Future<void> main() async {
         final decodedData = jsonDecode(data);
         if(decodedData['message'] == "card played"){
           setPlayedCard(player, decodedData['seme'], decodedData['valore']);
-          sendToTheOpponent(player);
+          sendToTheOpponent(player, decodedData['seme'], decodedData['valore']);
         }
+        readyPlayers--; // Non serve contarli
+      }
+      else if(data == "opponent card received"){
+        print(readyPlayers);
+        turno += (turno + 1) % 2;
+        if(readyPlayers == 1){
+          canPlay = true;
+          //play();
+          // return
+        }
+        else if(readyPlayers == 2){
+          int winner = makeConfront();
+          sockets[winner].add(jsonEncode({"message": "you won"}));
+          sockets[(winner + 1) % 2].add(jsonEncode({"message": "you lose"}));
+          mazzi[winner].add(cardsToConfront[0]);
+          mazzi[winner].add(cardsToConfront[1]);
+          readyPlayers = 0;
+
+          print(winner);
+          print(playerPoints);
+        }
+
+        play();
+      }
+      else if(data == "confront received" && readyPlayers == 2){
+        canPlay = true;
+        readyPlayers = 0;
+        play();
       }
     });
   }
@@ -150,6 +210,9 @@ Future<void> main() async {
     String jsonInit = jsonEncode({'message': 'init'});
     socket1!.add(jsonInit);
     socket2!.add(jsonInit);
+
+    sockets.add(socket1);
+    sockets.add(socket2);
 
     listen(socket1, 0);
     listen(socket2, 1);

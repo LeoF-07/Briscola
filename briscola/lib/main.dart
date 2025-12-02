@@ -74,43 +74,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _listen(){
-    socket!.listen((data) {
-      setState(() {
-        _serverMessage = data.toString();
-        if(_serverMessage != "Connesso"){
-          _parseMessage(_serverMessage);
-        }
-      });
-    });
-  }
-
-  void _parseMessage(String serverMessage){
-    final decodedServerMessage = jsonDecode(serverMessage);
-    String message = decodedServerMessage['message'];
-
-    switch (message) {
-      case "init":
-        initGame();
-        break;
-      case "briscola":
-        discoverBriscola(decodedServerMessage['seme'], decodedServerMessage['valore']);
-        break;
-      case "drawCards":
-        drawCards(decodedServerMessage['cards']);
-        break;
-      case "your turn":
-        play();
-        break;
-      case "opponent played":
-        int index = Random().nextInt(3);
-        moveCard(opponentCards[index], Offset(100, 100));
-        opponentCards.removeAt(index);
-        break;
-    }
-
-  }
-
   void initGame(){
     indicatori.removeLast();
 
@@ -147,12 +110,8 @@ class _MyHomePageState extends State<MyHomePage> {
       int drawedCard = lastDrawCard;
       drawedCards.add(drawedCard);
 
-      Future.delayed(Duration(milliseconds: 200), () {
-        setState(() {
-          keysCard[drawedCard].currentState!.setFrontPath(cards[i]['seme'], cards[i]['valore']);
-          keysCard[drawedCard].currentState!.setVisible();
-        });
-      });
+      makeCardVisible(drawedCard, cards[i]['seme'], cards[i]['valore']);
+
       lastDrawCard--;
       x -= 80;
     }
@@ -190,6 +149,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void makeCardVisible(int indice, String seme, int valore){
+    Future.delayed(Duration(milliseconds: 200), () {
+      setState(() {
+        keysCard[indice].currentState!.setFrontPath(seme, valore);
+        keysCard[indice].currentState!.setVisible();
+      });
+    });
+  }
+
   void play(){
     makeCardsTappable(true);
   }
@@ -201,9 +169,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void giocaCarta(int i){
-    moveCard(i, const Offset(100, 100));
+    moveCard(i, const Offset(250, 190));
     makeCardsTappable(false);
-    drawedCards.removeAt(i % 3); // 38 = 2, 37 = 1, 36 = 0 e così via
+    drawedCards.remove(i); // 38 = 2, 37 = 1, 36 = 0 e così via
     String playedCardJson = jsonEncode(
         {
           'message': 'card played',
@@ -212,6 +180,46 @@ class _MyHomePageState extends State<MyHomePage> {
         }
     );
     socket!.add(playedCardJson);
+  }
+
+
+  void _listen(){
+    socket!.listen((data) {
+      setState(() {
+        _serverMessage = data.toString();
+        if(_serverMessage != "Connesso"){
+          _parseMessage(_serverMessage);
+        }
+      });
+    });
+  }
+
+  void _parseMessage(String serverMessage){
+    final decodedServerMessage = jsonDecode(serverMessage);
+    String message = decodedServerMessage['message'];
+
+    switch (message) {
+      case "init":
+        initGame();
+        break;
+      case "briscola":
+        discoverBriscola(decodedServerMessage['seme'], decodedServerMessage['valore']);
+        break;
+      case "drawCards":
+        drawCards(decodedServerMessage['cards']);
+        break;
+      case "your turn":
+        play();
+        break;
+      case "opponent played":
+        int index = Random().nextInt(opponentCards.length);
+        moveCard(opponentCards[index], Offset(250, 190));
+        makeCardVisible(opponentCards[index], decodedServerMessage['seme'], decodedServerMessage['valore']);
+        opponentCards.removeAt(index);
+        socket!.add("opponent card received");
+        break;
+    }
+
   }
 
 
