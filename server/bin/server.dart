@@ -9,12 +9,7 @@ const List<String> semi = ["Denari", "Coppe", "Spade", "Bastoni"];
 enum Player {player1, player2}
 
 
-Future<void> main() async {
-  // Avvia il server HTTP sulla porta 8080
-  final HttpServer server = await HttpServer.bind(InternetAddress.anyIPv4, 8080);
-  print('Server avviato su ws://localhost:8080/ws');
-
-  WebSocket? socket1;
+WebSocket? socket1;
   WebSocket? socket2;
 
   int connectedPlayers = 0;
@@ -97,17 +92,17 @@ Future<void> main() async {
   }
 
   void play(){
-    for(int i = 0; i < 6; i++){
+    //for(int i = 0; i < 6; i++){
       sockets[turno].add(jsonEncode({"message": "your turn"}));
-      if(turno == 0 && canPlay){
+      /*if(turno == 0 && canPlay){
         canPlay = false;
         turno = 1;
       }
       else if(turno == 1 && canPlay){
         canPlay = false;
         turno = 0;
-      }
-    }
+      }*/
+    //}
   }
 
   void setPlayedCard(int player, String seme, int valore){
@@ -121,6 +116,9 @@ Future<void> main() async {
   int makeConfront(){
     Card firstCard = cardsToConfront[0];
     Card secondCard = cardsToConfront[1];
+
+    String semeRiferimento = cardsToConfront[turno].seme;
+
     if(firstCard.seme == briscola!.seme && secondCard.seme != briscola!.seme){
       playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
       return 0;
@@ -129,12 +127,32 @@ Future<void> main() async {
       playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
       return 1;
     }
-    else if((firstCard.seme == briscola!.seme && secondCard.seme == briscola!.seme) || (firstCard.seme != briscola!.seme && secondCard.seme != briscola!.seme)){
+    else if((firstCard.seme == briscola!.seme && secondCard.seme == briscola!.seme)){
       if(cardPoints[firstCard.valore]! > cardPoints[secondCard.valore]!){
         playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
         return 0;
       }
       else{
+        playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+        return 1;
+      }
+    }
+    else if(firstCard.seme != briscola!.seme && secondCard.seme != briscola!.seme){
+      if(firstCard.seme == semeRiferimento && secondCard.seme == semeRiferimento){
+        if(cardPoints[firstCard.valore]! > cardPoints[secondCard.valore]!){
+          playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+          return 0;
+        }
+        else{
+          playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+          return 1;
+        }
+      }
+      if(firstCard.seme == semeRiferimento && secondCard.seme != semeRiferimento){
+        playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+        return 0;
+      }
+      else if(secondCard.seme == semeRiferimento && firstCard.seme != semeRiferimento){
         playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
         return 1;
       }
@@ -161,6 +179,7 @@ Future<void> main() async {
       }
       else if(data == "cards drawed" && readyPlayers == 2){
         chooseTheFirst();
+        print("Turno: $turno");
         canPlay = true;
         play();
         readyPlayers = 0;
@@ -175,7 +194,9 @@ Future<void> main() async {
       }
       else if(data == "opponent card received"){
         print(readyPlayers);
-        turno += (turno + 1) % 2;
+        print("Turno ex: $turno");
+        turno = (turno + 1) % 2;
+        print("Turno: $turno");
         if(readyPlayers == 1){
           canPlay = true;
           //play();
@@ -183,6 +204,7 @@ Future<void> main() async {
         }
         else if(readyPlayers == 2){
           int winner = makeConfront();
+          turno = winner;
           sockets[winner].add(jsonEncode({"message": "you won"}));
           sockets[(winner + 1) % 2].add(jsonEncode({"message": "you lose"}));
           mazzi[winner].add(cardsToConfront[0]);
@@ -211,12 +233,18 @@ Future<void> main() async {
     socket1!.add(jsonInit);
     socket2!.add(jsonInit);
 
-    sockets.add(socket1);
-    sockets.add(socket2);
+    sockets.add(socket1!);
+    sockets.add(socket2!);
 
-    listen(socket1, 0);
-    listen(socket2, 1);
+    listen(socket1!, 0);
+    listen(socket2!, 1);
   }
+
+
+Future<void> main() async {
+  // Avvia il server HTTP sulla porta 8080
+  final HttpServer server = await HttpServer.bind(InternetAddress.anyIPv4, 8080);
+  print('Server avviato su ws://localhost:8080/ws');
 
 
 
@@ -225,13 +253,13 @@ Future<void> main() async {
     if (req.uri.path == '/ws' && connectedPlayers == 0) {
       socket1 = await WebSocketTransformer.upgrade(req);
       print('Nuovo client collegato');
-      socket1.add('Connesso');
+      socket1!.add('Connesso');
       connectedPlayers++;
     } 
     else if(req.uri.path == '/ws' && connectedPlayers == 1) {
       socket2 = await WebSocketTransformer.upgrade(req);
       print('Nuovo client collegato');
-      socket2.add('Connesso');
+      socket2!.add('Connesso');
 
       startGame();
     }

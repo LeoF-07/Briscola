@@ -52,6 +52,9 @@ class _MyHomePageState extends State<MyHomePage> {
   List<int> drawedCards = [];
   List<int> opponentCards = [];
 
+  int? indexOfPlayedCard;
+  int? indexOfOpponentCard;
+
   @override
   void initState() {
     super.initState();
@@ -169,7 +172,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void giocaCarta(int i){
-    moveCard(i, const Offset(250, 190));
+    indexOfPlayedCard = i;
+    moveCard(i, const Offset(200, 400));
     makeCardsTappable(false);
     drawedCards.remove(i); // 38 = 2, 37 = 1, 36 = 0 e così via
     String playedCardJson = jsonEncode(
@@ -213,10 +217,19 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       case "opponent played":
         int index = Random().nextInt(opponentCards.length);
-        moveCard(opponentCards[index], Offset(250, 190));
+        indexOfOpponentCard = opponentCards[index];
+        moveCard(opponentCards[index], Offset(200, 190));
         makeCardVisible(opponentCards[index], decodedServerMessage['seme'], decodedServerMessage['valore']);
         opponentCards.removeAt(index);
         socket!.add("opponent card received");
+        break;
+      case "you won":
+        moveCard(indexOfPlayedCard!, Offset(300, 400));
+        moveCard(indexOfOpponentCard!, Offset(300, 400));
+        break;
+      case "you lose":
+        moveCard(indexOfPlayedCard!, Offset(300, 190));
+        moveCard(indexOfOpponentCard!, Offset(300, 190));
         break;
     }
 
