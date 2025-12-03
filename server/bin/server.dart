@@ -92,17 +92,7 @@ WebSocket? socket1;
   }
 
   void play(){
-    //for(int i = 0; i < 6; i++){
-      sockets[turno].add(jsonEncode({"message": "your turn"}));
-      /*if(turno == 0 && canPlay){
-        canPlay = false;
-        turno = 1;
-      }
-      else if(turno == 1 && canPlay){
-        canPlay = false;
-        turno = 0;
-      }*/
-    //}
+    sockets[turno].add(jsonEncode({"message": "your turn"}));
   }
 
   void setPlayedCard(int player, String seme, int valore){
@@ -127,14 +117,24 @@ WebSocket? socket1;
       playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
       return 1;
     }
-    else if((firstCard.seme == briscola!.seme && secondCard.seme == briscola!.seme)){
+    else if(firstCard.seme == briscola!.seme && secondCard.seme == briscola!.seme){
       if(cardPoints[firstCard.valore]! > cardPoints[secondCard.valore]!){
         playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
         return 0;
       }
-      else{
+      else if(cardPoints[firstCard.valore]! < cardPoints[secondCard.valore]!){
         playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
         return 1;
+      }
+      else{
+        if(firstCard.valore > secondCard.valore){
+          playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+          return 0;
+        }
+        else if(firstCard.valore < secondCard.valore){
+          playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+          return 1;
+        }
       }
     }
     else if(firstCard.seme != briscola!.seme && secondCard.seme != briscola!.seme){
@@ -143,12 +143,22 @@ WebSocket? socket1;
           playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
           return 0;
         }
-        else{
+        else if(cardPoints[firstCard.valore]! < cardPoints[secondCard.valore]!){
           playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
           return 1;
         }
+        else{
+          if(firstCard.valore > secondCard.valore){
+            playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+            return 0;
+          }
+          else if(firstCard.valore < secondCard.valore){
+            playerPoints[1] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
+            return 1;
+          }
+        }
       }
-      if(firstCard.seme == semeRiferimento && secondCard.seme != semeRiferimento){
+      else if(firstCard.seme == semeRiferimento && secondCard.seme != semeRiferimento){
         playerPoints[0] += cardPoints[firstCard.valore]! + cardPoints[secondCard.valore]!;
         return 0;
       }
@@ -172,7 +182,7 @@ WebSocket? socket1;
         discoverBriscola();
         readyPlayers = 0;
       }
-      else if(data == "briscola discovered" && readyPlayers == 2){
+      else if((data == "briscola discovered") && readyPlayers == 2){
           drawCards(socket1!);
           drawCards(socket2!);
           readyPlayers = 0;
@@ -199,7 +209,7 @@ WebSocket? socket1;
         print("Turno: $turno");
         if(readyPlayers == 1){
           canPlay = true;
-          //play();
+          play();
           // return
         }
         else if(readyPlayers == 2){
@@ -214,12 +224,11 @@ WebSocket? socket1;
           print(winner);
           print(playerPoints);
         }
-
-        play();
       }
       else if(data == "confront received" && readyPlayers == 2){
         canPlay = true;
         readyPlayers = 0;
+        // metterò qui che devono pescare le carte
         play();
       }
     });

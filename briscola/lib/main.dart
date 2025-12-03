@@ -175,7 +175,8 @@ class _MyHomePageState extends State<MyHomePage> {
     indexOfPlayedCard = i;
     moveCard(i, const Offset(200, 400));
     makeCardsTappable(false);
-    drawedCards.remove(i); // 38 = 2, 37 = 1, 36 = 0 e così via
+    drawedCards.remove(i);
+
     String playedCardJson = jsonEncode(
         {
           'message': 'card played',
@@ -226,10 +227,12 @@ class _MyHomePageState extends State<MyHomePage> {
       case "you won":
         moveCard(indexOfPlayedCard!, Offset(300, 400));
         moveCard(indexOfOpponentCard!, Offset(300, 400));
+        socket!.add("confront received");
         break;
       case "you lose":
         moveCard(indexOfPlayedCard!, Offset(300, 190));
         moveCard(indexOfOpponentCard!, Offset(300, 190));
+        socket!.add("confront received");
         break;
     }
 
