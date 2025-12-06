@@ -43,7 +43,7 @@ WebSocket? socket1;
 
   void initCards(){
     for(String seme in semi){
-      for(int i = 1; i <= 10; i++) {
+      for(int i = 1; i <= 3; i++) {
         cards.add(Card(seme: seme, valore: i));
       }
     }
@@ -228,7 +228,7 @@ WebSocket? socket1;
           // return
         }
         else if(readyPlayers == 2){
-          int winner = makeConfront();
+          winner = makeConfront();
           turno = winner;
           sockets[winner].add(jsonEncode({"message": "you won"}));
           sockets[(winner + 1) % 2].add(jsonEncode({"message": "you lose"}));
@@ -236,16 +236,36 @@ WebSocket? socket1;
           mazzi[winner].add(cardsToConfront[1]);
           readyPlayers = 0;
 
-          print(winner);
+          print("Winner: $winner");
           print(playerPoints);
         }
       }
       else if(data == "confront received" && readyPlayers == 2){
+        print("Carte rimaste nel mazzo: ${cards.length}");
         canPlay = true;
         readyPlayers = 0;
-        drawCard(winner);
-        drawCard((winner + 1) % 2);
-        //play();
+        if(cards.length > 1){
+          drawCard(winner);
+          drawCard((winner + 1) % 2);
+        }
+        else if(cards.length == 1){
+          print("Winner: $winner");
+          Card drawedCard = cards.removeLast();
+          String jsonCard = jsonEncode(
+            {
+              'message': 'last card',
+              'seme': drawedCard.seme,
+              'valore': drawedCard.valore
+            }
+          );
+          sockets[winner].add(jsonCard);
+
+          jsonCard = jsonEncode({'message': 'last card briscola'});
+          sockets[(winner + 1) % 2].add(jsonCard);
+        }
+        else if(cards.isEmpty){
+          play();
+        }
       }
       else if(data == "card drawed" && readyPlayers == 2){
         readyPlayers = 0;

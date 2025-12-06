@@ -169,6 +169,40 @@ class _MyHomePageState extends State<MyHomePage> {
     lastDrawCard--;
   }
 
+  Future<void> drawBriscola() async{ // potrei mettere un parametro facoltativo con l'indice che altrimenti è lastDrawCard
+    drawedCards.add(39);
+
+    double x = 240;
+    await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
+    {
+      if(i != 2){
+        moveCardFast(drawedCards[i], Offset(x, 800));
+      }
+      else {
+        moveCard(drawedCards[i], Offset(x, 800));
+      }
+      x -= 80;
+    }
+    //lastDrawCard--;
+  }
+
+  Future<void> drawOpponentBriscola() async {
+    opponentCards.add(39);
+
+    double x = 80;
+    await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3)){
+      if(i != 2){
+        moveCardFast(opponentCards[i], Offset(x, -50));
+      }
+      else {
+        moveCard(opponentCards[i], Offset(x, -50));
+      }
+      x += 80;
+    }
+
+    //lastDrawCard--;
+  }
+
   void makeCardsTappable(bool tappable){
     for(int drawedCard in drawedCards){
       setState(() {
@@ -278,15 +312,19 @@ class _MyHomePageState extends State<MyHomePage> {
         await drawACard(decodedServerMessage['seme'], decodedServerMessage['valore']);
         await drawOpponentCard();
         socket!.add("card drawed");
+      case "last card briscola":
+        await drawBriscola();
+        await drawOpponentCard();
+        socket!.add("card drawed");
+      case "last card":
+        await drawACard(decodedServerMessage['seme'], decodedServerMessage['valore']);
+        await drawOpponentBriscola();
+        socket!.add("card drawed");
     }
 
   }
 
   int duration = 500;
-
-
-  //double x = 0;
-  //double y = 470;
 
   @override
   Widget build(BuildContext context) {
