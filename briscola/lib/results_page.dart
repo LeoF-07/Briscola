@@ -1,8 +1,5 @@
-import 'dart:math';
-
+import 'package:briscola/main.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'dart:convert';
 
 import 'game_card.dart';
 
@@ -61,6 +58,13 @@ class _ResultPageState extends State<ResultsPage> {
     });
   }
 
+  void restart(){
+    Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage(key: UniqueKey(), title: 'FirstPage'))
+    );
+  }
+
   bool show = false;
 
   @override
@@ -109,7 +113,9 @@ class _ResultPageState extends State<ResultsPage> {
                     Text("Hai vinto", style: stileIndicatore) :
                     (widget.decodedServerMessage['result'] == 'you lost') ?
                       Text("Hai perso", style: stileIndicatore) :
-                      Text("Pareggio", style: stileIndicatore)
+                      Text("Pareggio", style: stileIndicatore),
+                  SizedBox(height: 50),
+                  ElevatedButton(onPressed: restart, child: Text("Torna alla schermata home"))
                 ]
               )
           ]

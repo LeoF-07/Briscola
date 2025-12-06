@@ -101,6 +101,8 @@ flutter:
     - images/cards/Denari/8.jpg
     - images/cards/Denari/9.jpg
     - images/cards/Denari/10.jpg
+    - images/logo.png
+    - images/sipario.png
 
   #   - images/a_dot_ham.jpeg
 

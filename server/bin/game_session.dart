@@ -3,29 +3,34 @@ import 'dart:io';
 import 'dart:math';
 
 import 'card.dart';
-import 'game_session.dart';
+
+class GameSession{
+  GameSession({required this.socket1, required this.socket2}){
+    startGame();
+  }
 
 
-const List<String> semi = ["Denari", "Coppe", "Spade", "Bastoni"];
-enum Player {player1, player2}
+  static const List<String> semi = ["Denari", "Coppe", "Spade", "Bastoni"];
 
 
-WebSocket? socket1;
-WebSocket? socket2;
+  WebSocket? socket1;
+  WebSocket? socket2;
+
+  int connectedPlayers = 0;
 
 
- Map<int, int> cardPoints = {
-    1: 11,
-    2: 0,
-    3: 10,
-    4: 0,
-    5: 0,
-    6: 0,
-    7: 0,
-    8: 2,
-    9: 3,
-    10: 4
-};
+  Map<int, int> cardPoints = {
+      1: 11,
+      2: 0,
+      3: 10,
+      4: 0,
+      5: 0,
+      6: 0,
+      7: 0,
+      8: 2,
+      9: 3,
+      10: 4
+  };
 
   List<int> playerPoints = [0, 0];
   int winner = 0;
@@ -321,40 +326,5 @@ WebSocket? socket2;
 
     listen(socket1!, 0);
     listen(socket2!, 1);
-  }
-
-
-int connectedPlayers = 0;
-
-Future<void> main() async {
-  // Avvia il server HTTP sulla porta 8080
-  final HttpServer server = await HttpServer.bind(InternetAddress.anyIPv4, 8080);
-  print('Server avviato su ws://localhost:8080/ws');
-
-  await for (HttpRequest req in server) {
-    // Gestisce solo il percorso /ws
-    if (req.uri.path == '/ws' && connectedPlayers == 0) {
-      socket1 = await WebSocketTransformer.upgrade(req);
-      print('Nuovo client collegato');
-      socket1!.add('Connesso');
-      connectedPlayers++;
-    } 
-    else if(req.uri.path == '/ws' && connectedPlayers == 1) {
-      socket2 = await WebSocketTransformer.upgrade(req);
-      print('Nuovo client collegato');
-      socket2!.add('Connesso');
-
-      //startGame();
-
-
-      connectedPlayers = 0;
-      GameSession(socket1: socket1, socket2: socket2);
-    }
-    else {
-      req.response
-        ..statusCode = HttpStatus.notFound
-        ..write('Endpoint non valido')
-        ..close();
-    }
   }
 }
