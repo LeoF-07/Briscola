@@ -25,9 +25,18 @@ class GameCardState extends State<GameCard>{
     frontPath = "images/cards/$seme/$valore.jpg";
   }
 
-  void setVisible(){
+  void setVisible(bool visible){
     setState(() {
-      path = frontPath!;
+      if(visible){
+        setState(() {
+          path = frontPath!;
+        });
+      }
+      else{
+        setState(() {
+          path = retroPath;
+        });
+      }
     });
   }
 

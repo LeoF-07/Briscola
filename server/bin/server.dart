@@ -94,6 +94,7 @@ WebSocket? socket1;
 
   void play(){
     sockets[turno].add(jsonEncode({"message": "your turn"}));
+    sockets[(turno + 1) % 2].add(jsonEncode({"message": "opponent turn"}));
   }
 
   void setPlayedCard(int player, String seme, int valore){
@@ -275,23 +276,29 @@ WebSocket? socket1;
       else if(data == "zero cards"){
         readyPlayers--;
         playerWithZeroCards++;
+        String winnerMessage = "you won";
+        String loserMessage = "you lost";
         if(playerWithZeroCards == 2){
           int gameWinner = 0;
-          if(playerPoints[0] > playerPoints[1]){
+          if(playerPoints[0] == playerPoints[1]){
+            winnerMessage = "pareggio";
+            loserMessage = "pareggio";
+          }
+          else if(playerPoints[0] > playerPoints[1]){
             gameWinner = 0;
           }
-          else{
+          else if(playerPoints[1] > playerPoints[0]){
             gameWinner = 1;
           }
           String jsonEndGameWinner = jsonEncode({
             'message': "game ended",
-            'result': "you won",
+            'result': winnerMessage,
             'yourCards': mazzi[gameWinner].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList(),
             'opponentCards': mazzi[(gameWinner + 1) % 2].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList()
           });
           String jsonEndGameLoser = jsonEncode({
             'message': "game ended",
-            'result': "you lost",
+            'result': loserMessage,
             'yourCards': mazzi[(gameWinner + 1) % 2].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList(),
             'opponentCards': mazzi[gameWinner].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList()
           });

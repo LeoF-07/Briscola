@@ -43,7 +43,14 @@ class _MyHomePageState extends State<MyHomePage> {
     Center(child: ElevatedButton(onPressed: _connectToServer, child: Text("Connettiti")))
   ];*/
 
-  late Widget indicatore = Center(child: ElevatedButton(onPressed: _connectToServer, child: Text("Connettiti")));
+  TextStyle stileIndicatore = TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold);
+
+  late Widget indicatore = Wrap(
+    alignment: WrapAlignment.center, // centra il contenuto
+    children: [
+      ElevatedButton(onPressed: _connectToServer, child: Text("Connettiti"))
+    ]
+  );
 
   String _serverMessage = "Nessuna connessione";
 
@@ -66,14 +73,25 @@ class _MyHomePageState extends State<MyHomePage> {
   void _connectToServer() async {
     //indicatori.removeLast();
     //indicatori.add(Center(child: Text("Collegamento...")));
-    indicatore = Center(child: Text("Collegamento..."));
+    indicatore = Wrap(
+        alignment: WrapAlignment.center, // centra il contenuto
+        children: [
+          Text("Collegamento", style: stileIndicatore)
+        ]
+    );
     
     try {
       // Cambia localhost con l'IP del tuo PC se usi un emulatore Android
       socket = await WebSocket.connect('ws://10.0.2.2:8080/ws');
       /*indicatori.removeLast();
       indicatori.add(Center(child: Text("In attesa dell'avversario...")));*/
-      indicatore = (Center(child: Text("In attesa dell'avversario...")));
+      indicatore = Wrap(
+        alignment: WrapAlignment.center, // centra il contenuto
+        children: [
+          Text("In attesa ", style: stileIndicatore),
+          Text("dell'avversario...", style: stileIndicatore)
+        ],
+      );
       _listen();
     } catch (e) {
       setState(() {
@@ -101,7 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void discoverBriscola(String seme, int valore) {
     keysCard[lastDrawCard].currentState!.setFrontPath(seme, valore);
-    keysCard[lastDrawCard].currentState!.setVisible();
+    keysCard[lastDrawCard].currentState!.setVisible(true);
     moveCard(lastDrawCard, Offset(0, 220));
     lastDrawCard--;
 
@@ -109,28 +127,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> drawMyCards(List cards) async {
-    double x = 240;
+    double x = 260;
 
     drawedCards.clear();
     await for (var i in Stream.periodic(Duration(seconds: 1), (count) => count).take(3))
     {
-      moveCard(lastDrawCard, Offset(x, 800));
+      moveCard(lastDrawCard, Offset(x, 730));
       int drawedCard = lastDrawCard;
       drawedCards.add(drawedCard);
       makeCardVisible(drawedCard, cards[i]['seme'], cards[i]['valore']);
       lastDrawCard--;
-      x -= 80;
+      x -= 100;
     }
   }
 
   Future<void> drawOpponentCards() async {
     opponentCards.clear();
-    double x = 80;
+    double x = 60;
     await for (var _ in Stream.periodic(Duration(seconds: 1), (count) => count).take(3)){
       opponentCards.add(lastDrawCard);
       moveCard(lastDrawCard, Offset(x, -50));
       lastDrawCard--;
-      x += 80;
+      x += 100;
     }
   }
 
@@ -143,17 +161,17 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> drawACard(String seme, int valore) async{
     drawedCards.add(lastDrawCard);
 
-    double x = 240;
+    double x = 260;
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
     {
       if(i != 2){
-        moveCardFast(drawedCards[i], Offset(x, 800));
+        moveCardFast(drawedCards[i], Offset(x, 730));
       }
       else {
-        moveCard(drawedCards[i], Offset(x, 800));
+        moveCard(drawedCards[i], Offset(x, 730));
         makeCardVisible(drawedCards[i], seme, valore);
       }
-      x -= 80;
+      x -= 100;
     }
     lastDrawCard--;
   }
@@ -161,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> drawOpponentCard() async {
     opponentCards.add(lastDrawCard);
 
-    double x = 80;
+    double x = 60;
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3)){
       if(i != 2){
         moveCardFast(opponentCards[i], Offset(x, -50));
@@ -169,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
       else {
         moveCard(opponentCards[i], Offset(x, -50));
       }
-      x += 80;
+      x += 100;
     }
 
     lastDrawCard--;
@@ -178,24 +196,25 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> drawBriscola() async{ // potrei mettere un parametro facoltativo con l'indice che altrimenti è lastDrawCard
     drawedCards.add(39);
 
-    double x = 240;
+    double x = 260;
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
     {
       if(i != 2){
-        moveCardFast(drawedCards[i], Offset(x, 800));
+        moveCardFast(drawedCards[i], Offset(x, 730));
       }
       else {
-        moveCard(drawedCards[i], Offset(x, 800));
+        moveCard(drawedCards[i], Offset(x, 730));
       }
-      x -= 80;
+      x -= 100;
     }
     //lastDrawCard--;
   }
 
   Future<void> drawOpponentBriscola() async {
     opponentCards.add(39);
+    keysCard[39].currentState!.setVisible(false);
 
-    double x = 80;
+    double x = 60;
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3)){
       if(i != 2){
         moveCardFast(opponentCards[i], Offset(x, -50));
@@ -203,7 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
       else {
         moveCard(opponentCards[i], Offset(x, -50));
       }
-      x += 80;
+      x += 100;
     }
 
     //lastDrawCard--;
@@ -225,7 +244,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Future.delayed(Duration(milliseconds: 200), () {
       setState(() {
         keysCard[indice].currentState!.setFrontPath(seme, valore);
-        keysCard[indice].currentState!.setVisible();
+        keysCard[indice].currentState!.setVisible(true);
       });
     });
   }
@@ -295,8 +314,19 @@ class _MyHomePageState extends State<MyHomePage> {
         drawCards(decodedServerMessage['cards']);
         break;
       case "your turn":
-        setState((){indicatore = Center(child: Text("È il tuo turno"));});
+        setState((){indicatore = Center(child: Text("È il tuo turno", style: stileIndicatore));});
         play();
+        break;
+      case "opponent turn":
+        /*setState((){
+          indicatore = Wrap(
+            alignment: WrapAlignment.center, // centra il contenuto
+            children: [
+              Text("È il turno ", style: stileIndicatore),
+              Text("dell'avversario...", style: stileIndicatore)
+            ],
+          );
+        });*/
         break;
       case "opponent played":
         int index = Random().nextInt(opponentCards.length);
@@ -307,17 +337,29 @@ class _MyHomePageState extends State<MyHomePage> {
         socket!.add("opponent card received");
         break;
       case "round won":
-        moveCard(indexOfPlayedCard!, Offset(300, 400));
-        moveCard(indexOfOpponentCard!, Offset(300, 400));
-        socket!.add("confront received");
+        await Future.delayed(Duration(seconds: 1), () {
+          setState(() {
+            keysCard[indexOfPlayedCard!].currentState!.setVisible(false);
+            keysCard[indexOfOpponentCard!].currentState!.setVisible(false);
+          });
+          moveCard(indexOfPlayedCard!, Offset(350, 400));
+          moveCard(indexOfOpponentCard!, Offset(350, 400));
+          socket!.add("confront received");
+        });
         if(drawedCards.isEmpty){
           socket!.add("zero cards");
         }
         break;
       case "round lose":
-        moveCard(indexOfPlayedCard!, Offset(300, 190));
-        moveCard(indexOfOpponentCard!, Offset(300, 190));
-        socket!.add("confront received");
+        await Future.delayed(Duration(seconds: 1), () {
+          setState(() {
+            keysCard[indexOfPlayedCard!].currentState!.setVisible(false);
+            keysCard[indexOfOpponentCard!].currentState!.setVisible(false);
+          });
+          moveCard(indexOfPlayedCard!, Offset(350, 190));
+          moveCard(indexOfOpponentCard!, Offset(350, 190));
+          socket!.add("confront received");
+        });
         if(drawedCards.isEmpty){
           socket!.add("zero cards");
         }
@@ -335,6 +377,7 @@ class _MyHomePageState extends State<MyHomePage> {
         await drawOpponentBriscola();
         socket!.add("card drawed");
       case "game ended":
+        setState((){indicatore = Center(child: Text("La partita è terminata", style: stileIndicatore));});
         await Future.delayed(
             Duration(seconds: 2), () =>
             Navigator.pushReplacement(
@@ -376,7 +419,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: GameCard(key: keysCard[i], width: 100, height: 200),
                 ),
               ),
-            indicatore
+            Center(
+              child: SizedBox(
+                width: 150,
+                child: indicatore
+              ),
+            )
+            //indicatore
           ],
         ),
       ),

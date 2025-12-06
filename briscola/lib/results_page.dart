@@ -25,6 +25,10 @@ class _ResultPageState extends State<ResultsPage> {
   List<int> punteggiMieCarte = [];
   List<int> punteggiCarteAvversario = [];
 
+
+  TextStyle stileIndicatore = TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold);
+
+
   num mioPunteggio = 0; // card['punteggio'] è un num
   num punteggioAvversario = 0;
 
@@ -51,7 +55,7 @@ class _ResultPageState extends State<ResultsPage> {
         final st = myKeyCardsState[i].currentState;
         if (st != null) {
           st.setFrontPath(myCardsDetails[i]['seme'], myCardsDetails[i]['valore']);
-          st.setVisible();
+          st.setVisible(true);
         }
       }
     });
@@ -88,21 +92,24 @@ class _ResultPageState extends State<ResultsPage> {
                             width: 50,
                             height: 100
                           ),
-                          Text("${punteggiMieCarte[i * 6 + j]}")
+                          Text("${punteggiMieCarte[i * 6 + j]}", style: stileIndicatore)
                         ]
                       )
                     ),
                   ],
               ),
+            SizedBox(height: 40,),
             !show ?
               ElevatedButton(onPressed: showResults, child: Text("Mostra i risultati")) :
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Hai totalizzato un punteggio di $mioPunteggio"),
+                  Text("Hai totalizzato un punteggio di $mioPunteggio punti", style: stileIndicatore,),
                   (widget.decodedServerMessage['result'] == 'you won') ?
-                    Text("Hai vinto") :
-                    Text("Hai perso")
+                    Text("Hai vinto", style: stileIndicatore) :
+                    (widget.decodedServerMessage['result'] == 'you lost') ?
+                      Text("Hai perso", style: stileIndicatore) :
+                      Text("Pareggio", style: stileIndicatore)
                 ]
               )
           ]
