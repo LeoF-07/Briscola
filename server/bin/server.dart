@@ -43,7 +43,7 @@ WebSocket? socket1;
 
   void initCards(){
     for(String seme in semi){
-      for(int i = 1; i <= 3; i++) {
+      for(int i = 1; i <= 2; i++) {
         cards.add(Card(seme: seme, valore: i));
       }
     }
@@ -188,6 +188,7 @@ WebSocket? socket1;
 
 
   int readyPlayers = 0;
+  int playerWithZeroCards = 0;
 
   void listen(WebSocket socket, int player){
     socket.listen((data) {
@@ -230,8 +231,8 @@ WebSocket? socket1;
         else if(readyPlayers == 2){
           winner = makeConfront();
           turno = winner;
-          sockets[winner].add(jsonEncode({"message": "you won"}));
-          sockets[(winner + 1) % 2].add(jsonEncode({"message": "you lose"}));
+          sockets[winner].add(jsonEncode({"message": "round won"}));
+          sockets[(winner + 1) % 2].add(jsonEncode({"message": "round lose"}));
           mazzi[winner].add(cardsToConfront[0]);
           mazzi[winner].add(cardsToConfront[1]);
           readyPlayers = 0;
@@ -270,6 +271,33 @@ WebSocket? socket1;
       else if(data == "card drawed" && readyPlayers == 2){
         readyPlayers = 0;
         play();
+      }
+      else if(data == "zero cards"){
+        readyPlayers--;
+        playerWithZeroCards++;
+        if(playerWithZeroCards == 2){
+          int gameWinner = 0;
+          if(playerPoints[0] > playerPoints[1]){
+            gameWinner = 0;
+          }
+          else{
+            gameWinner = 1;
+          }
+          String jsonEndGameWinner = jsonEncode({
+            'message': "game ended",
+            'result': "you won",
+            'yourCards': mazzi[gameWinner].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList(),
+            'opponentCards': mazzi[(gameWinner + 1) % 2].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList()
+          });
+          String jsonEndGameLoser = jsonEncode({
+            'message': "game ended",
+            'result': "you lost",
+            'yourCards': mazzi[(gameWinner + 1) % 2].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList(),
+            'opponentCards': mazzi[gameWinner].map((carta) => {'seme': carta.seme,'valore': carta.valore, 'punteggio': cardPoints[carta.valore]}).toList()
+          });
+          sockets[gameWinner].add(jsonEndGameWinner);
+          sockets[(gameWinner + 1) % 2].add(jsonEndGameLoser);
+        }
       }
     });
   }

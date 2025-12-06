@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 class GameCard extends StatefulWidget{
-  const GameCard({super.key});
+  const GameCard({super.key, required this.width, required this.height});
+
+  final double width;
+  final double height;
 
   @override
   State<StatefulWidget> createState() => GameCardState();
@@ -33,8 +36,8 @@ class GameCardState extends State<GameCard>{
     return Image.asset(
       path,
       fit: BoxFit.cover,
-      width: 100,
-      height: 200,
+      width: widget.width,
+      height: widget.height,
     );
   }
 

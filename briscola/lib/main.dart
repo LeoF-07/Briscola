@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:briscola/results_page.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -38,9 +39,11 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   WebSocket? socket;
 
-  late List indicatori = [
+  /*late List indicatori = [
     Center(child: ElevatedButton(onPressed: _connectToServer, child: Text("Connettiti")))
-  ];
+  ];*/
+
+  late Widget indicatore = Center(child: ElevatedButton(onPressed: _connectToServer, child: Text("Connettiti")));
 
   String _serverMessage = "Nessuna connessione";
 
@@ -61,14 +64,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _connectToServer() async {
-    indicatori.removeLast();
-    indicatori.add(Center(child: Text("Collegamento...")));
+    //indicatori.removeLast();
+    //indicatori.add(Center(child: Text("Collegamento...")));
+    indicatore = Center(child: Text("Collegamento..."));
     
     try {
       // Cambia localhost con l'IP del tuo PC se usi un emulatore Android
       socket = await WebSocket.connect('ws://10.0.2.2:8080/ws');
-      indicatori.removeLast();
-      indicatori.add(Center(child: Text("In attesa dell'avversario...")));
+      /*indicatori.removeLast();
+      indicatori.add(Center(child: Text("In attesa dell'avversario...")));*/
+      indicatore = (Center(child: Text("In attesa dell'avversario...")));
       _listen();
     } catch (e) {
       setState(() {
@@ -78,7 +83,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void initGame(){
-    indicatori.removeLast();
+    //indicatori.removeLast();
+    indicatore = Text("");
 
     double x = 0;
     double y = 470;
@@ -247,6 +253,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void giocaCarta(int i){
     indexOfPlayedCard = i;
+    setState(() {indicatore = Text("");});
     moveCard(i, const Offset(200, 400));
     makeCardsTappable(false);
     drawedCards.remove(i);
@@ -288,6 +295,7 @@ class _MyHomePageState extends State<MyHomePage> {
         drawCards(decodedServerMessage['cards']);
         break;
       case "your turn":
+        setState((){indicatore = Center(child: Text("È il tuo turno"));});
         play();
         break;
       case "opponent played":
@@ -298,15 +306,21 @@ class _MyHomePageState extends State<MyHomePage> {
         opponentCards.removeAt(index);
         socket!.add("opponent card received");
         break;
-      case "you won":
+      case "round won":
         moveCard(indexOfPlayedCard!, Offset(300, 400));
         moveCard(indexOfOpponentCard!, Offset(300, 400));
         socket!.add("confront received");
+        if(drawedCards.isEmpty){
+          socket!.add("zero cards");
+        }
         break;
-      case "you lose":
+      case "round lose":
         moveCard(indexOfPlayedCard!, Offset(300, 190));
         moveCard(indexOfOpponentCard!, Offset(300, 190));
         socket!.add("confront received");
+        if(drawedCards.isEmpty){
+          socket!.add("zero cards");
+        }
         break;
       case "drawed card":
         await drawACard(decodedServerMessage['seme'], decodedServerMessage['valore']);
@@ -320,6 +334,14 @@ class _MyHomePageState extends State<MyHomePage> {
         await drawACard(decodedServerMessage['seme'], decodedServerMessage['valore']);
         await drawOpponentBriscola();
         socket!.add("card drawed");
+      case "game ended":
+        await Future.delayed(
+            Duration(seconds: 2), () =>
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => ResultsPage(title: 'Results', decodedServerMessage: decodedServerMessage))
+            )
+        );
     }
 
   }
@@ -351,10 +373,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   onTap: tapEnabled[i] ? () {
                     giocaCarta(i);
                   } : null,
-                  child: GameCard(key: keysCard[i]),
+                  child: GameCard(key: keysCard[i], width: 100, height: 200),
                 ),
               ),
-            ...indicatori
+            indicatore
           ],
         ),
       ),
