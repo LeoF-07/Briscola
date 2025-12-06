@@ -29,6 +29,7 @@ WebSocket? socket1;
   };
 
   List<int> playerPoints = [0, 0];
+  int winner = 0;
 
   List<Card> cards = [];
   List<List<Card>> mazzi = [[],[]];
@@ -61,7 +62,7 @@ WebSocket? socket1;
 
     String jsonCards = jsonEncode(
       {
-        'message': 'drawCards',
+        'message': 'drawed cards',
         'cards': drawedCards.map((c) => {'seme': c.seme, 'valore': c.valore}).toList()
       }
     );
@@ -171,6 +172,20 @@ WebSocket? socket1;
     return 0;
   }
 
+  void drawCard(int player){
+    Card drawedCard = cards.removeLast();
+
+    String jsonCard = jsonEncode(
+      {
+        'message': 'drawed card',
+        'seme': drawedCard.seme,
+        'valore': drawedCard.valore
+      }
+    );
+
+    sockets[player].add(jsonCard);
+  }
+
 
   int readyPlayers = 0;
 
@@ -182,7 +197,7 @@ WebSocket? socket1;
         discoverBriscola();
         readyPlayers = 0;
       }
-      else if((data == "briscola discovered") && readyPlayers == 2){
+      else if(data == "briscola discovered" && readyPlayers == 2){
           drawCards(socket1!);
           drawCards(socket2!);
           readyPlayers = 0;
@@ -228,7 +243,12 @@ WebSocket? socket1;
       else if(data == "confront received" && readyPlayers == 2){
         canPlay = true;
         readyPlayers = 0;
-        // metterò qui che devono pescare le carte
+        drawCard(winner);
+        drawCard((winner + 1) % 2);
+        //play();
+      }
+      else if(data == "card drawed" && readyPlayers == 2){
+        readyPlayers = 0;
         play();
       }
     });

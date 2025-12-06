@@ -109,12 +109,9 @@ class _MyHomePageState extends State<MyHomePage> {
     await for (var i in Stream.periodic(Duration(seconds: 1), (count) => count).take(3))
     {
       moveCard(lastDrawCard, Offset(x, 800));
-
       int drawedCard = lastDrawCard;
       drawedCards.add(drawedCard);
-
       makeCardVisible(drawedCard, cards[i]['seme'], cards[i]['valore']);
-
       lastDrawCard--;
       x -= 80;
     }
@@ -123,21 +120,53 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> drawOpponentCards() async {
     opponentCards.clear();
     double x = 80;
-    Stream.periodic(Duration(seconds: 1), (count) {
-      return count;
-    }).take(3).listen((data)
-    {
+    await for (var _ in Stream.periodic(Duration(seconds: 1), (count) => count).take(3)){
       opponentCards.add(lastDrawCard);
       moveCard(lastDrawCard, Offset(x, -50));
       lastDrawCard--;
       x += 80;
-    });
+    }
   }
 
   void drawCards(List cards) async {
     await drawMyCards(cards);
     await drawOpponentCards();
     socket!.add("cards drawed");
+  }
+
+  Future<void> drawACard(String seme, int valore) async{
+    drawedCards.add(lastDrawCard);
+
+    double x = 240;
+    await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
+    {
+      if(i != 2){
+        moveCardFast(drawedCards[i], Offset(x, 800));
+      }
+      else {
+        moveCard(drawedCards[i], Offset(x, 800));
+        makeCardVisible(drawedCards[i], seme, valore);
+      }
+      x -= 80;
+    }
+    lastDrawCard--;
+  }
+
+  Future<void> drawOpponentCard() async {
+    opponentCards.add(lastDrawCard);
+
+    double x = 80;
+    await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3)){
+      if(i != 2){
+        moveCardFast(opponentCards[i], Offset(x, -50));
+      }
+      else {
+        moveCard(opponentCards[i], Offset(x, -50));
+      }
+      x += 80;
+    }
+
+    lastDrawCard--;
   }
 
   void makeCardsTappable(bool tappable){
@@ -166,6 +195,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void moveCard(int index, Offset newPos) {
+    setState(() {
+      duration = 500;
+    });
+    setState(() {
+      coordinate[index] = newPos;
+    });
+  }
+  void moveCardFast(int index, Offset newPos) {
+    setState(() {
+      duration = 200;
+    });
     setState(() {
       coordinate[index] = newPos;
     });
@@ -199,7 +239,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _parseMessage(String serverMessage){
+  void _parseMessage(String serverMessage) async {
     final decodedServerMessage = jsonDecode(serverMessage);
     String message = decodedServerMessage['message'];
 
@@ -210,7 +250,7 @@ class _MyHomePageState extends State<MyHomePage> {
       case "briscola":
         discoverBriscola(decodedServerMessage['seme'], decodedServerMessage['valore']);
         break;
-      case "drawCards":
+      case "drawed cards":
         drawCards(decodedServerMessage['cards']);
         break;
       case "your turn":
@@ -234,13 +274,19 @@ class _MyHomePageState extends State<MyHomePage> {
         moveCard(indexOfOpponentCard!, Offset(300, 190));
         socket!.add("confront received");
         break;
+      case "drawed card":
+        await drawACard(decodedServerMessage['seme'], decodedServerMessage['valore']);
+        await drawOpponentCard();
+        socket!.add("card drawed");
     }
 
   }
 
+  int duration = 500;
 
-  double x = 0;
-  double y = 470;
+
+  //double x = 0;
+  //double y = 470;
 
   @override
   Widget build(BuildContext context) {
@@ -259,14 +305,13 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             for (int i = 0; i < keysCard.length; i++)
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 500),
+                duration: Duration(milliseconds: duration),
                 curve: Curves.easeInOut,
                 left: coordinate[i].dx,
                 top: coordinate[i].dy,
                 child: GestureDetector(
                   onTap: tapEnabled[i] ? () {
                     giocaCarta(i);
-                    //disableTap(i); // disabilita dopo il primo tap
                   } : null,
                   child: GameCard(key: keysCard[i]),
                 ),
