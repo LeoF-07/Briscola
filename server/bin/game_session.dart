@@ -47,7 +47,7 @@ class GameSession{
 
   void initCards(){
     for(String seme in semi){
-      for(int i = 1; i <= 2; i++) {
+      for(int i = 1; i <= 10; i++) {
         cards.add(Card(seme: seme, valore: i));
       }
     }
