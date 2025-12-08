@@ -45,12 +45,13 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
+        color: Colors.white,
+        //decoration: const BoxDecoration(
+          /*image: DecorationImage(
             image: AssetImage("images/sipario.png"),
             fit: BoxFit.cover,
-          ),
-        ),
+          ),*/
+        //),
         child: Column(
           children: [
             Container(
@@ -70,12 +71,12 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Align(
                 alignment: Alignment.center,
-                child: Text("PREMI IL PULSANTE PER GIOCARE", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 35, fontWeight: FontWeight.bold))
+                child: Text("PREMI IL PULSANTE PER GIOCARE", textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontSize: 37, fontWeight: FontWeight.bold))
             ),
             SizedBox(height: 50),
             Align(
                 alignment: Alignment.center,
-                child: ElevatedButton(onPressed: play, child: Text("GIOCA"))
+                child: ElevatedButton(onPressed: play, style: ElevatedButton.styleFrom(backgroundColor: Colors.black), child: Text("GIOCA", style: TextStyle(color: Colors.white)))
             ),
           ],
         ),

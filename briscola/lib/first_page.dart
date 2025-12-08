@@ -812,14 +812,14 @@ class _FirstPageState extends State<FirstPage> {
                 duration: Duration(milliseconds: duration),
                 curve: Curves.easeInOut,
                 left: coordinate[i].dx,
-                top: coordinate[i].dy - MediaQuery.of(context).padding.top + 20,
+                top: coordinate[i].dy - MediaQuery.of(context).padding.top - 20,
                 child: GestureDetector(
                   onTap: tapEnabled[i] ? () {
                     giocaCarta(i);
                   } : null,
                   child: RotatedBox(
                       quarterTurns: rotazioni[i], // 90° in senso orario
-                      child: GameCard( key: keysCard[i], width: 100, height: 200)
+                      child: GameCard(key: keysCard[i], width: 100, height: 200)
                   ),
                 ),
               ),
