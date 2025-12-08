@@ -98,7 +98,6 @@ class GameSession{
 
   void play(){
     sockets[turno].add(jsonEncode({"message": "your turn"}));
-    sockets[(turno + 1) % 2].add(jsonEncode({"message": "opponent turn"}));
   }
 
   void setPlayedCard(int player, String seme, int valore){
@@ -237,7 +236,7 @@ class GameSession{
           winner = makeConfront();
           turno = winner;
           sockets[winner].add(jsonEncode({"message": "round won"}));
-          sockets[(winner + 1) % 2].add(jsonEncode({"message": "round lose"}));
+          sockets[(winner + 1) % 2].add(jsonEncode({"message": "round lost"}));
           mazzi[winner].add(cardsToConfront[0]);
           mazzi[winner].add(cardsToConfront[1]);
           readyPlayers = 0;
