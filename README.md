@@ -1,6 +1,6 @@
 # Briscola
 
-Briscola Online 1v1
+Briscola 1v1 Online
 Sfida i tuoi amici a briscola in partite 1 vs 1.
 
 ## Mazzo di carte
