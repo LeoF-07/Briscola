@@ -42,7 +42,7 @@ Se il primo giocatore che gioca una carta gioca carta1 e il secondo gioca carta2
 * Se le carte sono di semi diversi prevale il seme di carta1, quindi per qualsiasi carta2 di seme diverso vince carta1
 
 ## Screenshots del gioco
-<img src="images/Explanation.png" alt="Spiegazione pagine e componenti" width="1000">
+<img src="images/Explanation.png" alt="Spiegazione pagine e componenti" width="800">
 
 ## Scelte di sviluppo
 
