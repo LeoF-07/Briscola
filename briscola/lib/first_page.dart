@@ -48,26 +48,15 @@ class _FirstPageState extends State<FirstPage> {
   }
 
   void _connectToServer() async {
-    indicatore = Wrap(
-        alignment: WrapAlignment.center,
-        children: [
-          Text("Collegamento", style: stileIndicatore)
-        ]
-    );
+    indicatore = Align(alignment: Alignment.center, child: Text("Collegamento", style: stileIndicatore));
 
     try {
       socket = await WebSocket.connect('ws://192.168.151.210:8080/ws');
-      indicatore = Wrap(
-        alignment: WrapAlignment.center,
-        children: [
-          Text("In attesa ", style: stileIndicatore),
-          Text("dell'avversario...", style: stileIndicatore)
-        ],
-      );
+      indicatore = Align(alignment: Alignment.center, child: Text("In attesa dell'avversario...", style: stileIndicatore));
       _listen();
     } catch (e) {
       setState(() {
-        _serverMessage = "Errore di connessione: $e";
+        indicatore = Align(alignment: Alignment.center, child: Text("Errore di connessione $e", style: stileIndicatore));
       });
     }
   }
@@ -78,10 +67,12 @@ class _FirstPageState extends State<FirstPage> {
     double x = 0;
     double y = 440;
     for (int i = 0; i < 40; i++) {
-      keysCard.add(GlobalKey<GameCardState>());
-      coordinate.add(Offset(x, y));
-      tapEnabled.add(false);
-      rotazioni.add(0);
+      setState(() {
+        keysCard.add(GlobalKey<GameCardState>());
+        coordinate.add(Offset(x, y));
+        tapEnabled.add(false);
+        rotazioni.add(0);
+      });
       y += 1;
     }
 
@@ -138,7 +129,7 @@ class _FirstPageState extends State<FirstPage> {
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
     {
       if(i != 2){
-        moveCardFast(drawedCards[i], Offset(x, 700));
+        moveCard(drawedCards[i], Offset(x, 700), fast: true);
       }
       else {
         moveCard(drawedCards[i], Offset(x, 700));
@@ -149,13 +140,34 @@ class _FirstPageState extends State<FirstPage> {
     lastDrawCard--;
   }
 
-  Future<void> drawOpponentCard() async {
-    opponentCards.add(lastDrawCard);
+  Future<void> drawBriscola() async{ // potrei mettere un parametro facoltativo con l'indice che altrimenti è lastDrawCard
+    drawedCards.add(39);
+
+    double x = 260;
+    await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
+    {
+      if(i != 2){
+        moveCard(drawedCards[i], Offset(x, 700), fast: true);
+      }
+      else {
+        moveCard(drawedCards[i], Offset(x, 700));
+      }
+      x -= 100;
+    }
+  }
+
+  Future<void> drawOpponentCard({bool briscola = false}) async {
+    if(briscola){
+      opponentCards.add(39);
+      keysCard[39].currentState!.setVisible(false);
+    } else {
+      opponentCards.add(lastDrawCard);
+    }
 
     double x = 60;
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3)){
       if(i != 2){
-        moveCardFast(opponentCards[i], Offset(x, -50));
+        moveCard(opponentCards[i], Offset(x, -50), fast: true);
       }
       else {
         moveCard(opponentCards[i], Offset(x, -50));
@@ -166,37 +178,21 @@ class _FirstPageState extends State<FirstPage> {
     lastDrawCard--;
   }
 
-  Future<void> drawBriscola() async{ // potrei mettere un parametro facoltativo con l'indice che altrimenti è lastDrawCard
-    drawedCards.add(39);
-
-    double x = 260;
-    await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3))
-    {
-      if(i != 2){
-        moveCardFast(drawedCards[i], Offset(x, 700));
-      }
-      else {
-        moveCard(drawedCards[i], Offset(x, 700));
-      }
-      x -= 100;
-    }
-  }
-
-  Future<void> drawOpponentBriscola() async {
+  /*Future<void> drawOpponentBriscola() async {
     opponentCards.add(39);
     keysCard[39].currentState!.setVisible(false);
 
     double x = 60;
     await for (var i in Stream.periodic(Duration(milliseconds: 500), (count) => count).take(3)){
       if(i != 2){
-        moveCardFast(opponentCards[i], Offset(x, -50));
+        moveCard(opponentCards[i], Offset(x, -50), fast: true);
       }
       else {
         moveCard(opponentCards[i], Offset(x, -50));
       }
       x += 100;
     }
-  }
+  }*/
 
   void makeCardsTappable(bool tappable){
     for(int drawedCard in drawedCards){
@@ -223,22 +219,29 @@ class _FirstPageState extends State<FirstPage> {
     makeCardsTappable(true);
   }
 
-  void moveCard(int index, Offset newPos) {
+  void moveCard(int index, Offset newPos, {bool fast = false}) {
     setState(() {
-      duration = 500;
+      if(fast){
+        duration = 200;
+      }
+      else {
+        duration = 500;
+      }
     });
-    setState(() {
-      coordinate[index] = newPos;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        coordinate[index] = newPos;
+      });
     });
   }
-  void moveCardFast(int index, Offset newPos) {
+  /*void moveCardFast(int index, Offset newPos) {
     setState(() {
       duration = 200;
     });
     setState(() {
       coordinate[index] = newPos;
     });
-  }
+  }*/
 
   void giocaCarta(int i){
     indexOfPlayedCard = i;
@@ -284,7 +287,7 @@ class _FirstPageState extends State<FirstPage> {
         drawCards(decodedServerMessage['cards']);
         break;
       case "your turn":
-        setState((){indicatore = Center(child: Text("È il tuo turno", style: stileIndicatore));});
+        setState((){indicatore = Align(alignment: Alignment.center, child: Text("È il tuo turno", style: stileIndicatore));});
         play();
         break;
       case "opponent played":
@@ -337,10 +340,10 @@ class _FirstPageState extends State<FirstPage> {
         socket!.add("card drawed");
       case "last card":
         await drawACard(decodedServerMessage['seme'], decodedServerMessage['valore']);
-        await drawOpponentBriscola();
+        await drawOpponentCard(briscola: true);
         socket!.add("card drawed");
       case "game ended":
-        setState((){indicatore = Center(child: Text("La partita è terminata", style: stileIndicatore));});
+        setState((){indicatore = Align(alignment: Alignment.center, child: Text("La partita è terminata", style: stileIndicatore));});
         await Future.delayed(
             Duration(seconds: 2), () =>
             Navigator.pushReplacement(
@@ -356,6 +359,24 @@ class _FirstPageState extends State<FirstPage> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> cardWidgets = [];
+    for (int i = 0; i < keysCard.length; i++){
+      cardWidgets.add(
+          AnimatedPositioned(
+            duration: Duration(milliseconds: duration),
+            curve: Curves.easeInOut,
+            left: coordinate[i].dx,
+            top: coordinate[i].dy - MediaQuery.of(context).padding.top - 20,
+            child: GestureDetector(
+              onTap: tapEnabled[i] ? () {giocaCarta(i);} : null,
+              child: RotatedBox(
+                  quarterTurns: rotazioni[i], // 90° in senso orario
+                  child: GameCard(key: keysCard[i], width: 100, height: 200)
+              ),
+            ),
+          )
+      );
+    }
 
     return Scaffold(
       body: Container(
@@ -369,29 +390,13 @@ class _FirstPageState extends State<FirstPage> {
         ),
         child: Stack(
           children: [
-            for (int i = 0; i < keysCard.length; i++)
-              AnimatedPositioned(
-                duration: Duration(milliseconds: duration),
-                curve: Curves.easeInOut,
-                left: coordinate[i].dx,
-                top: coordinate[i].dy - MediaQuery.of(context).padding.top - 20,
-                child: GestureDetector(
-                  onTap: tapEnabled[i] ? () {
-                    giocaCarta(i);
-                  } : null,
-                  child: RotatedBox(
-                      quarterTurns: rotazioni[i], // 90° in senso orario
-                      child: GameCard(key: keysCard[i], width: 100, height: 200)
-                  ),
-                ),
-              ),
+            ...cardWidgets,
             Center(
               child: SizedBox(
                   width: 200,
                   child: indicatore
               ),
             )
-            //indicatore
           ],
         ),
       ),

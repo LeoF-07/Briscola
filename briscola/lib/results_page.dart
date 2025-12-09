@@ -69,6 +69,36 @@ class _ResultPageState extends State<ResultsPage> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> rowsOfCards = [];
+
+    for (int i = 0; i < (myKeyCardsState.length / 6).ceil(); i++) {
+      List<Widget> cardsInARow = [];
+      for (int j = 0, cardIndex = i * 6; j < 6 && cardIndex < myKeyCardsState.length; j++, cardIndex++){
+        cardsInARow.add(
+          Padding(
+            padding: const EdgeInsets.all(5),
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GameCard(key: myKeyCardsState[cardIndex],
+                      width: 50,
+                      height: 100
+                  ),
+                  Text("${punteggiMieCarte[cardIndex]}", style: stileIndicatore)
+                ]
+            )
+          )
+        );
+      }
+
+      rowsOfCards.add(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: cardsInARow,
+          )
+      );
+    }
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -82,27 +112,8 @@ class _ResultPageState extends State<ResultsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            for (int i = 0; i < (myKeyCardsState.length / 6).ceil(); i++)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (int j = 0; j < 6 && (i * 6 + j) < myKeyCardsState.length; j++)
-                    Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GameCard(key: myKeyCardsState[i * 6 + j],
-                            width: 50,
-                            height: 100
-                          ),
-                          Text("${punteggiMieCarte[i * 6 + j]}", style: stileIndicatore)
-                        ]
-                      )
-                    ),
-                  ],
-              ),
-            SizedBox(height: 40,),
+            ...rowsOfCards,
+            SizedBox(height: 30),
             !show ?
               ElevatedButton(onPressed: showResults, child: Text("Mostra i risultati")) :
               Column(
@@ -114,7 +125,7 @@ class _ResultPageState extends State<ResultsPage> {
                     (widget.decodedServerMessage['result'] == 'you lost') ?
                       Text("Hai perso", style: stileIndicatore) :
                       Text("Pareggio", style: stileIndicatore),
-                  SizedBox(height: 50),
+                  SizedBox(height: 30),
                   ElevatedButton(onPressed: restart, child: Text("Torna alla schermata home"))
                 ]
               )
